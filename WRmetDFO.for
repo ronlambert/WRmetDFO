@@ -23,7 +23,7 @@ c This preprocesses WR meteorological data for BlastDFO
       data psitomb /68.94757/
       data tref /273.15/
       data rhoconv /515378./   ! rhoconv converts slugs/ft**3 to g/m**3
-      data ver /' 1.0'/
+      data ver /' 1.1'/
 
 c     Write sceen banner
       write(*,*)
@@ -34,6 +34,14 @@ c     Write sceen banner
       write(*,*) 
      $  '**************************************************************'
       write(*,*)
+
+c     Check for input met file in command argument
+      call getarg(1,outfile_entered)
+      if(outfile_entered(1:1).ne.' ') then
+        read(outfile_entered,'(A)') infile
+        write(*,'(A,A)') ' Input met data file: ', infile
+        goto 30
+      endif
 
 c     Read in file names
       write(*,*)
@@ -123,29 +131,14 @@ c     Read tower block data
       enddo
       write(1,'(A)') rec
 
-c     Read and write lines to start of DASS block
-      read(2,'(A120)') rec
-      do while (rec(1:1).ne.'$')
-        write(1,'(A)') rec
-        read(2,*) rec
-      enddo
-      write(1,'(A)') ''
-      write(1,'(A)') rec
-
-c     Read and write lines to start of balloon block
-      read(2,'(A120)') rec
-      do while (rec(1:1).ne.'$')
-        write(1,'(A)') rec
-        read(2,'(A120)') rec
-      enddo
-      write(1,'(A)') rec
-
 c     Read and write balloon header
       read(2,'(A120)') rec
-      do while (index(rec,'ALT').eq.0)
+      do while (index(rec,'ASCENT').eq.0)
         write(1,'(A)') rec
         read(2,'(A120)') rec
       enddo
+      write(1,'(A)') rec
+      read(2,'(A120)') rec
       write(1,'(A)') rec
 
       den = -9.99
@@ -377,7 +370,7 @@ c     Write output ballon data records
         call PadVal(sval(m),'   spd',cspd)
         call PadVal(pval(m),' press',cpress)
         call PadVal(rval(m),'    rh',crh)
-        write(1,102)  calt, cdir, cspd,
+        write(1,102) calt, cdir, cspd,
      $     tval(m), dpval(m), cpress, crh,
      $     abshum, dnval(m), irval(m), sosval(m)
   102 format(A5,1X,A3,1X,A5,1X,2(F5.1,1X),A6,1X,A5,1X,F5.2,2X,
@@ -387,19 +380,22 @@ c     Write output ballon data records
           pause
         endif
       enddo
-  175 continue
+      write(1,102) '20000', cdir, cspd,
+     $  tval(n), dpval(n), cpress, crh,
+     $  abshum, dnval(n), irval(n), sosval(n)
+c  175 continue
       write(*,*)
       write(*,*)' End of file - processing completed'
       write(*,*)' Number of balloon data records processed = ',i - 1
       write(*,*)' Number bad data records encountered = ',ibad
       write(*,*)
-      write(*,*)' Output written to file = ',outfile
+      write(*,'(A,A)')' Output written to file: ',outfile
       write(*,*)' Number of met levels saved = ',n - 1
       write(*,*)
       write(*,*)
       close(1)
       close(2)
-      pause                       ! rrl temp
+c      pause                       ! rrl temp
       stop
 
    80 continue
